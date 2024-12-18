@@ -1,0 +1,81 @@
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import time
+
+# Load the images for the driller machine, rock, and grass
+driller_img = mpimg.imread("C://Users//Agnid//Desktop//driller machine//driller_image.png")  # Make sure this path is correct
+rock_img = mpimg.imread("C://Users//Agnid//Desktop//driller machine//rock_icon.jpg")  # Ensure path for rock image
+grass_img = mpimg.imread("C://Users//Agnid//Desktop//driller machine//grass_icon.jpg")  # Ensure path for grass image
+
+# Create a simple grid (change this to your actual grid)
+grid_size = (10, 10)
+grid = np.zeros(grid_size)
+
+# Define rocks and goal positions
+rocks = [(1, 2), (2, 3), (3, 4), (5, 6), (7, 8)]
+human_pos = (9, 9)  # Position of the human
+
+# Define start and goal (start is top-left, human is bottom-right)
+start = (0, 0)
+goal = human_pos
+
+# Create a graph
+graph = nx.grid_2d_graph(grid_size[0], grid_size[1])
+
+# Remove nodes where there are rocks
+for rock in rocks:
+    if rock in graph:
+        graph.remove_node(rock)
+
+# Find the shortest path using Dijkstra's algorithm
+shortest_path = nx.shortest_path(graph, source=start, target=goal)
+
+# Create an initial plot with a grid
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.set_xticks(np.arange(0, grid_size[1], 1))
+ax.set_yticks(np.arange(0, grid_size[0], 1))
+ax.grid(which='both')
+
+# Add grass as the background
+for i in range(grid_size[0]):
+    for j in range(grid_size[1]):
+        ax.imshow(grass_img, extent=(j, j+1, grid_size[0] - i - 1, grid_size[0] - i), aspect='auto')
+
+# Add rocks (red color or rock icon)
+for rock in rocks:
+    ax.imshow(rock_img, extent=(rock[1], rock[1]+1, grid_size[0] - rock[0] - 1, grid_size[0] - rock[0]), aspect='auto')
+
+# Plot the start point (blue) and goal point (green)
+ax.plot(start[1], start[0], marker='o', color='blue', markersize=15, label="Start")
+ax.plot(goal[1], goal[0], marker='o', color='green', markersize=15, label="Goal")
+
+# Draw the driller machine at the starting point
+driller_position = start
+driller_obj = ax.imshow(driller_img, extent=(driller_position[1], driller_position[1] + 1, 
+                                              grid_size[0] - driller_position[0] - 1, 
+                                              grid_size[0] - driller_position[0]), 
+                        aspect='auto')
+
+# Function to update the position of the driller machine
+def move_driller(position):
+    driller_obj.set_extent((position[1], position[1] + 1, 
+                            grid_size[0] - position[0] - 1, 
+                            grid_size[0] - position[0]))
+
+# Animate the driller moving along the shortest path
+for step in shortest_path:
+    # Update the driller's position to the current step
+    move_driller(step)
+    
+    # Draw the path step as green
+    ax.plot(step[1], step[0], marker='o', color='green', markersize=10)
+    
+    # Redraw and pause for animation effect
+    plt.draw()
+    plt.pause(0.5)  # Pause for a moment to visualize the movement
+
+# Show the final plot with the path completed
+plt.legend()
+plt.show()
